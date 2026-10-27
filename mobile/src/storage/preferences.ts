@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { persistMirrored } from './mirrored-storage-keys'
 import { TERMINAL_TEXT_SCALES } from '../terminal/terminal-text-scales'
+import { HOST_SIDEBAR_MIN_WIDTH } from '../layout/responsive-layout-metrics'
 
 const PINS_PREFIX = 'orca:pins:'
 // Push-service consent is independent of legacy socket notifications.
@@ -158,7 +159,7 @@ export async function saveDisabledTerminalLiveInputHandles(
 const SIDEBAR_WIDTH_KEY = 'orca:hostSidebarWidth'
 
 // Caller also caps this tablet/foldable sidebar against the window to preserve detail space.
-export const HOST_SIDEBAR_MIN_WIDTH = 280
+export { HOST_SIDEBAR_MIN_WIDTH }
 export const HOST_SIDEBAR_MAX_WIDTH = 560
 export const HOST_SIDEBAR_DEFAULT_WIDTH = 340
 

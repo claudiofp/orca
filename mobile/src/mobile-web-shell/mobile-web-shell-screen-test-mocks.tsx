@@ -111,7 +111,8 @@ export function screenModuleMocks(dependencies: ScreenDependencies) {
       usePathname: () => dependencies.pathname,
       useNavigation: () => ({
         setOptions: dependencies.setScreenOptions,
-        dispatch: dependencies.dispatch
+        dispatch: dependencies.dispatch,
+        isFocused: () => dependencies.screenFocused
       }),
       useNavigationContainerRef: () => ({ getRootState: () => dependencies.rootState }),
       useFocusEffect: (effect: () => undefined | (() => void)) => React.useEffect(effect, [effect])
@@ -184,7 +185,8 @@ export function screenModuleMocks(dependencies: ScreenDependencies) {
         reportPageBackClaim: dependencies.reportPageBackClaim,
         pageReady: dependencies.pageReady,
         pageFrame: dependencies.pageFrame,
-        backClaimed: dependencies.backClaimed
+        backClaimed: dependencies.backClaimed,
+        ownsHostArea: dependencies.ownsHostArea
       })
     })
   }

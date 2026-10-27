@@ -169,7 +169,8 @@ function Harness(props: {
     onPagePainted: () => {
       props.probe.paints += 1
     },
-    onPageBackClaim: (claimed) => props.probe.backClaims.push(claimed)
+    onPageBackClaim: (claimed) => props.probe.backClaims.push(claimed),
+    onPageLocation: () => {}
   })
   props.probe.view = view
   return props.session.kind === 'ready'

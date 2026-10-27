@@ -1,7 +1,11 @@
 import { spacing } from '../theme/mobile-theme'
 
-// Use actual window size so narrow iPad splits keep phone-like layouts.
-const WIDE_LAYOUT_MIN_WIDTH = 700
+// Host split geometry; a detail pane narrower than the narrowest iPhone cramps chat and terminals.
+export const HOST_SIDEBAR_MIN_WIDTH = 280
+export const SPLIT_DETAIL_MIN_WIDTH = 375
+
+// Use actual window size so narrow iPad splits keep phone-like layouts; unfolded foldables split in both orientations.
+const WIDE_LAYOUT_MIN_WIDTH = HOST_SIDEBAR_MIN_WIDTH + SPLIT_DETAIL_MIN_WIDTH
 
 // Require room in both dimensions so rotating a landscape phone cannot switch it to tablet UI.
 const TABLET_LAYOUT_MIN_SHORT_SIDE = 600

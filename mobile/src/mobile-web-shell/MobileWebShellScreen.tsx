@@ -32,6 +32,7 @@ import { usePageHostSnapshot } from './use-page-host-snapshot'
 import { useReportedHostAreaServing } from './host-area-serving'
 import { isHostRouteOf } from './page-route-policy'
 import { nativeStackReturn } from './native-stack-return'
+import { usePageLocationOnFold } from './page-location-on-fold'
 import { PageRouteUnavailableScreen } from './PageRouteUnavailableScreen'
 import { useResponsiveLayout } from '../layout/responsive-layout'
 import { storageReadParamsSchema, type BridgeNativeVerb } from './bridge/bridge-native-verbs'
@@ -185,6 +186,38 @@ export function MobileWebShellScreen({
       console.warn('[web-shell] could not open a URL for the page', { url, error })
     })
   }
+  // Push so Back reveals the mounted page without downloading or handshaking again.
+  const openPageRoute = (href: string) => {
+    if (overlay) {
+      return void router.replace(href)
+    }
+    // Return to an existing screen rather than pushing a duplicate over the live one.
+    const rootState = navigationContainer.getRootState()
+    const onStack = rootState ? nativeStackReturn(rootState, href) : null
+    if (onStack === 'current') {
+      return
+    }
+    if (onStack) {
+      navigation.dispatch({
+        type: 'POP',
+        payload: { count: onStack.count },
+        target: onStack.target,
+        source: onStack.source
+      })
+      return
+    }
+    // The wide host route owns the session area; dismissTo pops to it or replaces after a cold deep link, avoiding a second copy.
+    if (isWideLayout && isHostRouteOf(href, hostId)) {
+      router.dismissTo(href)
+      return
+    }
+    router.push(href)
+  }
+  const holdPageLocation = usePageLocationOnFold(
+    isWideLayout,
+    () => navigation.isFocused(),
+    openPageRoute
+  )
 
   const bridge = useMobileWebShellBridge({
     hostId,
@@ -215,6 +248,7 @@ export function MobileWebShellScreen({
     // Keep the cover until the page reports its own first frame.
     onPagePainted: reportPagePainted,
     onPageBackClaim: reportPageBackClaim,
+    onPageLocation: (href) => holdPageLocation(href, ownsHostArea),
     onRouteParamClear: (param, value) => {
       onRouteParamClear?.(param, value)
     },
@@ -223,33 +257,7 @@ export function MobileWebShellScreen({
       console.warn('[web-shell] refused to open this screen', issue)
       reportShellFailure('document-load-failed')
     },
-    // Push so Back reveals the mounted page without downloading or handshaking again.
-    onNavigate: (href: string) => {
-      if (overlay) {
-        return void router.replace(href)
-      }
-      // Return to an existing screen rather than pushing a duplicate over the live one.
-      const rootState = navigationContainer.getRootState()
-      const onStack = rootState ? nativeStackReturn(rootState, href) : null
-      if (onStack === 'current') {
-        return
-      }
-      if (onStack) {
-        navigation.dispatch({
-          type: 'POP',
-          payload: { count: onStack.count },
-          target: onStack.target,
-          source: onStack.source
-        })
-        return
-      }
-      // The wide host route owns the session area; dismissTo pops to it or replaces after a cold deep link, avoiding a second copy.
-      if (isWideLayout && isHostRouteOf(href, hostId)) {
-        router.dismissTo(href)
-        return
-      }
-      router.push(href)
-    },
+    onNavigate: openPageRoute,
     serveNativeVerb,
     onExternalLink: openUrlForPage,
     // Reuse the app’s platform haptics mapping; device failures are already swallowed there.
