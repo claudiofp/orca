@@ -67,31 +67,59 @@ export function hostListActions(controller: HostScreenController): HostListActio
   ]
 }
 
-const RAIL_ORDER: HostListAction['id'][] = ['accounts', 'tasks', 'search', 'floating']
+function RailIcon({ action }: { action: HostListAction }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.icon,
+        pressed && styles.pressed,
+        action.disabled && styles.disabled
+      ]}
+      onPress={action.onPress}
+      disabled={action.disabled}
+      accessibilityRole="button"
+      accessibilityLabel={action.label}
+    >
+      <action.icon size={22} color={colors.textSecondary} />
+    </Pressable>
+  )
+}
 
-// The rail reads top to bottom: navigation, then the workspace tools, then New as the one filled button.
-export function HostRailActions({ controller }: { controller: HostScreenController }) {
+function pick(all: HostListAction[], ids: HostListAction['id'][]): HostListAction[] {
+  return ids.flatMap((id) => all.filter((action) => action.id === id))
+}
+
+// Beside the sidebar: navigation, then the workspace tools, then New as the one filled button.
+// On the cover the list keeps its own New button, and search sits at the bottom within thumb reach.
+export function HostRailActions({
+  controller,
+  placement
+}: {
+  controller: HostScreenController
+  placement: 'split' | 'cover'
+}) {
   const all = hostListActions(controller)
-  const listed = RAIL_ORDER.flatMap((id) => all.filter((action) => action.id === id))
+  if (placement === 'cover') {
+    return (
+      <View style={styles.coverRail}>
+        <View style={styles.rail}>
+          {pick(all, ['accounts', 'tasks', 'floating']).map((action) => (
+            <RailIcon key={action.id} action={action} />
+          ))}
+        </View>
+        {pick(all, ['search']).map((action) => (
+          <RailIcon key={action.id} action={action} />
+        ))}
+      </View>
+    )
+  }
   const create = all.find((action) => action.id === 'new')
   return (
     <View style={styles.rail}>
-      {listed.map((action) => (
-        <View key={action.id} style={styles.slot}>
+      {pick(all, ['accounts', 'tasks', 'search', 'floating']).map((action) => (
+        <View key={action.id} style={styles.rail}>
           {action.id === 'floating' ? <View style={styles.divider} /> : null}
-          <Pressable
-            style={({ pressed }) => [
-              styles.icon,
-              pressed && styles.pressed,
-              action.disabled && styles.disabled
-            ]}
-            onPress={action.onPress}
-            disabled={action.disabled}
-            accessibilityRole="button"
-            accessibilityLabel={action.label}
-          >
-            <action.icon size={22} color={colors.textSecondary} />
-          </Pressable>
+          <RailIcon action={action} />
         </View>
       ))}
       {create ? (
@@ -118,9 +146,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm
   },
-  slot: {
+  coverRail: {
+    flex: 1,
     alignItems: 'center',
-    gap: spacing.sm
+    justifyContent: 'space-between',
+    paddingBottom: spacing.sm
   },
   icon: {
     width: 44,

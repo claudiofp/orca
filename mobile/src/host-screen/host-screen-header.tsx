@@ -42,10 +42,14 @@ export function HostScreenHeader({ controller }: { controller: HostScreenControl
   } = controller
   // Why: a drop healed in a few seconds must not flash the host dot amber.
   const presentedConnState = useCalmConnectionState(connState, lastConnectedAt)
-  // With the detail pane empty, the sidebar's icons move to the Duo's side rail beside it.
+  // The Duo's side rail takes the list's icons: on the cover always, beside the sidebar only while the detail pane is empty.
   const railEdge = useSideRailEdge()
-  const railActions = embedded && controller.actionsInRail && railEdge !== null
-  useSideRailClaim(railActions ? <HostRailActions controller={controller} /> : null)
+  const railPlacement =
+    railEdge === null ? null : !embedded ? 'cover' : controller.actionsInRail ? 'split' : null
+  const railActions = railPlacement !== null
+  useSideRailClaim(
+    railPlacement ? <HostRailActions controller={controller} placement={railPlacement} /> : null
+  )
 
   return (
     <View style={styles.topChrome}>
@@ -88,7 +92,7 @@ export function HostScreenHeader({ controller }: { controller: HostScreenControl
             <Text style={styles.reconnectButtonText}>Reconnect</Text>
           </Pressable>
         ) : null}
-        {!embedded && floatingWorkspaceEnabled ? (
+        {!embedded && floatingWorkspaceEnabled && !railActions ? (
           <Pressable
             style={[
               styles.floatingWorkspaceHeaderButton,
@@ -194,47 +198,52 @@ export function HostScreenHeader({ controller }: { controller: HostScreenControl
           </Pressable>
 
           <View style={styles.toolbarSpacer} />
+          {railActions ? null : (
+            <>
+              <Pressable
+                style={styles.searchToggle}
+                onPress={() =>
+                  actions.navigateFromHostList(`/h/${encodeURIComponent(hostId)}/accounts`)
+                }
+                disabled={connState !== 'connected'}
+                accessibilityRole="button"
+                accessibilityLabel="Accounts"
+              >
+                <UserCircle
+                  size={16}
+                  color={connState === 'connected' ? colors.textSecondary : colors.textMuted}
+                />
+              </Pressable>
 
-          <Pressable
-            style={styles.searchToggle}
-            onPress={() =>
-              actions.navigateFromHostList(`/h/${encodeURIComponent(hostId)}/accounts`)
-            }
-            disabled={connState !== 'connected'}
-            accessibilityRole="button"
-            accessibilityLabel="Accounts"
-          >
-            <UserCircle
-              size={16}
-              color={connState === 'connected' ? colors.textSecondary : colors.textMuted}
-            />
-          </Pressable>
+              <Pressable
+                style={styles.searchToggle}
+                onPress={() =>
+                  actions.navigateFromHostList(`/h/${encodeURIComponent(hostId)}/tasks`)
+                }
+                disabled={connState !== 'connected'}
+                accessibilityRole="button"
+                accessibilityLabel="Tasks"
+              >
+                <List
+                  size={16}
+                  color={connState === 'connected' ? colors.textSecondary : colors.textMuted}
+                />
+              </Pressable>
 
-          <Pressable
-            style={styles.searchToggle}
-            onPress={() => actions.navigateFromHostList(`/h/${encodeURIComponent(hostId)}/tasks`)}
-            disabled={connState !== 'connected'}
-            accessibilityRole="button"
-            accessibilityLabel="Tasks"
-          >
-            <List
-              size={16}
-              color={connState === 'connected' ? colors.textSecondary : colors.textMuted}
-            />
-          </Pressable>
-
-          <Pressable
-            style={styles.searchToggle}
-            onPress={() => state.setShowSearch((s) => !s)}
-            accessibilityRole="button"
-            accessibilityLabel={state.showSearch ? 'Close search' : 'Search workspaces'}
-          >
-            {state.showSearch ? (
-              <X size={16} color={colors.textSecondary} />
-            ) : (
-              <Search size={16} color={colors.textSecondary} />
-            )}
-          </Pressable>
+              <Pressable
+                style={styles.searchToggle}
+                onPress={() => state.setShowSearch((s) => !s)}
+                accessibilityRole="button"
+                accessibilityLabel={state.showSearch ? 'Close search' : 'Search workspaces'}
+              >
+                {state.showSearch ? (
+                  <X size={16} color={colors.textSecondary} />
+                ) : (
+                  <Search size={16} color={colors.textSecondary} />
+                )}
+              </Pressable>
+            </>
+          )}
         </View>
       )}
     </View>
