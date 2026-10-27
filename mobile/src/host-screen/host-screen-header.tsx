@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   List,
   PanelLeftClose,
-  Plus,
   Search,
   SquareTerminal,
   UserCircle,
@@ -19,6 +18,8 @@ import { isConnectionOutage, type ConnectionVerdict } from '../transport/connect
 import { useCalmConnectionState } from '../transport/calm-connection-state'
 import { colors } from '../theme/mobile-theme'
 import { hostScreenStyles as styles } from './host-screen-styles'
+import { HostRailActions, hostListActions } from './host-rail-actions'
+import { useSideRailClaim, useSideRailEdge } from '../layout/side-rail'
 import type { HostScreenController } from './use-host-screen-controller'
 
 function isErrorVerdict(v: ConnectionVerdict): boolean {
@@ -41,6 +42,10 @@ export function HostScreenHeader({ controller }: { controller: HostScreenControl
   } = controller
   // Why: a drop healed in a few seconds must not flash the host dot amber.
   const presentedConnState = useCalmConnectionState(connState, lastConnectedAt)
+  // With the detail pane empty, the sidebar's icons move to the Duo's side rail beside it.
+  const railEdge = useSideRailEdge()
+  const railActions = embedded && controller.actionsInRail && railEdge !== null
+  useSideRailClaim(railActions ? <HostRailActions controller={controller} /> : null)
 
   return (
     <View style={styles.topChrome}>
@@ -140,88 +145,34 @@ export function HostScreenHeader({ controller }: { controller: HostScreenControl
             </Pressable>
           </View>
 
-          <View style={styles.embeddedToolbarRow}>
-            <Pressable
-              style={[
-                styles.embeddedToolbarIconButton,
-                connState !== 'connected' && styles.toolbarIconDisabled
-              ]}
-              onPress={() =>
-                actions.navigateFromHostList(`/h/${encodeURIComponent(hostId)}/accounts`)
-              }
-              disabled={connState !== 'connected'}
-              accessibilityRole="button"
-              accessibilityLabel="Accounts"
-            >
-              <UserCircle
-                size={16}
-                color={connState === 'connected' ? colors.textSecondary : colors.textMuted}
-              />
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.embeddedToolbarIconButton,
-                connState !== 'connected' && styles.toolbarIconDisabled
-              ]}
-              onPress={() => actions.navigateFromHostList(`/h/${encodeURIComponent(hostId)}/tasks`)}
-              disabled={connState !== 'connected'}
-              accessibilityRole="button"
-              accessibilityLabel="Tasks"
-            >
-              <List
-                size={16}
-                color={connState === 'connected' ? colors.textSecondary : colors.textMuted}
-              />
-            </Pressable>
-
-            {floatingWorkspaceEnabled ? (
-              <Pressable
-                style={[
-                  styles.embeddedToolbarIconButton,
-                  connState !== 'connected' && styles.toolbarIconDisabled
-                ]}
-                onPress={actions.openFloatingWorkspace}
-                disabled={connState !== 'connected'}
-                accessibilityRole="button"
-                accessibilityLabel="Floating Workspace"
-              >
-                <SquareTerminal
-                  size={18}
-                  color={connState === 'connected' ? colors.textSecondary : colors.textMuted}
-                />
-              </Pressable>
-            ) : null}
-
-            <Pressable
-              style={[
-                styles.embeddedToolbarIconButton,
-                connState !== 'connected' && styles.toolbarIconDisabled
-              ]}
-              onPress={actions.openNewWorktreeModal}
-              disabled={connState !== 'connected'}
-              accessibilityRole="button"
-              accessibilityLabel="New workspace"
-            >
-              <Plus
-                size={16}
-                color={connState === 'connected' ? colors.textPrimary : colors.textMuted}
-              />
-            </Pressable>
-
-            <Pressable
-              style={styles.embeddedToolbarIconButton}
-              onPress={() => state.setShowSearch((s) => !s)}
-              accessibilityRole="button"
-              accessibilityLabel={state.showSearch ? 'Close search' : 'Search workspaces'}
-            >
-              {state.showSearch ? (
-                <X size={16} color={colors.textSecondary} />
-              ) : (
-                <Search size={16} color={colors.textSecondary} />
-              )}
-            </Pressable>
-          </View>
+          {railActions ? null : (
+            <View style={styles.embeddedToolbarRow}>
+              {hostListActions(controller).map((action) => (
+                <Pressable
+                  key={action.id}
+                  style={[
+                    styles.embeddedToolbarIconButton,
+                    action.disabled && styles.toolbarIconDisabled
+                  ]}
+                  onPress={action.onPress}
+                  disabled={action.disabled}
+                  accessibilityRole="button"
+                  accessibilityLabel={action.label}
+                >
+                  <action.icon
+                    size={action.id === 'floating' ? 18 : 16}
+                    color={
+                      action.disabled
+                        ? colors.textMuted
+                        : action.id === 'new'
+                          ? colors.textPrimary
+                          : colors.textSecondary
+                    }
+                  />
+                </Pressable>
+              ))}
+            </View>
+          )}
         </View>
       ) : (
         <View style={styles.toolbar}>

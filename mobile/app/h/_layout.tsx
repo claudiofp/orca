@@ -3,9 +3,13 @@ import { View, StyleSheet, PanResponder, Platform } from 'react-native'
 import { useGlobalSearchParams, usePathname } from 'expo-router'
 import { colors } from '../../src/theme/mobile-theme'
 import { useResponsiveLayout } from '../../src/layout/responsive-layout'
-import { SPLIT_DETAIL_MIN_WIDTH } from '../../src/layout/responsive-layout-metrics'
 import {
-  HOST_SIDEBAR_DEFAULT_WIDTH,
+  defaultHostSidebarWidth,
+  SPLIT_DETAIL_MIN_WIDTH
+} from '../../src/layout/responsive-layout-metrics'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useReleasedSideRail } from '../../src/layout/side-safe-area'
+import {
   HOST_SIDEBAR_MAX_WIDTH,
   HOST_SIDEBAR_MIN_WIDTH,
   loadHostSidebarWidth,
@@ -38,9 +42,12 @@ export default function HostGroupLayout() {
   const pathname = usePathname()
   const overlayRoute = isOverlayPageRoute(pathname)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  // Keep the preferred width and clamp per render so a fold cannot shrink it for good.
-  const [preferredSidebarWidth, setSidebarWidth] = useState(HOST_SIDEBAR_DEFAULT_WIDTH)
-  const sidebarWidth = clampSidebarToWindow(preferredSidebarWidth, windowWidth)
+  // Keep the dragged width and clamp per render so a fold cannot shrink it for good.
+  const [savedSidebarWidth, setSidebarWidth] = useState<number | null>(null)
+  const sidebarWidth = clampSidebarToWindow(
+    savedSidebarWidth ?? defaultHostSidebarWidth(windowWidth),
+    windowWidth
+  )
 
   // Refs keep once-created PanResponder handlers reading current widths.
   const widthRef = useRef(sidebarWidth)
@@ -61,6 +68,9 @@ export default function HostGroupLayout() {
     }
   }, [])
 
+  // Host screens are pages that draw in the Duo's status-bar rail; the native sidebar pads itself.
+  useReleasedSideRail(Platform.OS !== 'web')
+  const railLeft = useSafeAreaInsets().left
   const hideSidebar = useCallback(() => setSidebarOpen(false), [])
   const revealSidebar = useCallback(() => setSidebarOpen(true), [])
   const [hostAreaServing, setHostAreaServing] = useState(false)
@@ -71,7 +81,8 @@ export default function HostGroupLayout() {
     Platform.OS === 'web' ? pageOwnsHostArea : !(pathname === `/h/${hostId}` && hostAreaServing)
   const showSidebar = isWideLayout && !!hostId && sidebarDrawnHere
   const detailHasContent = !!hostId && pathname !== `/h/${hostId}`
-  const canCollapseSidebar = showSidebar && detailHasContent
+  // Only the page's session header can reveal it again; a native sidebar beside a page detail could never come back.
+  const canCollapseSidebar = Platform.OS === 'web' && showSidebar && detailHasContent
 
   // Base host detail is a placeholder; hiding its sidebar would leave nothing useful.
   useEffect(() => {
@@ -109,11 +120,12 @@ export default function HostGroupLayout() {
     <HostProtocolGate hostId={hostId} transparentWhilePending={overlayRoute}>
       <View style={[styles.row, overlayRoute && styles.transparent]}>
         {showSidebar && sidebarOpen ? (
-          <View style={[styles.sidebar, { width: sidebarWidth }]}>
+          <View style={[styles.sidebar, { width: sidebarWidth, paddingLeft: railLeft }]}>
             <HostScreen
               embedded
               hostId={hostId}
               onHideSidebar={canCollapseSidebar ? hideSidebar : undefined}
+              actionsInRail={!detailHasContent}
             />
             {/* Edge drag handle captures Android gestures above the list. */}
             <View style={styles.resizeHandle} {...resizer.panHandlers} />

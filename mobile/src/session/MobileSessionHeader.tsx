@@ -9,7 +9,13 @@ import { useHostSidebarReveal } from '../layout/host-sidebar-reveal'
 import { useResponsiveLayout } from '../layout/responsive-layout'
 import type { MobileSessionController } from './use-mobile-session-controller'
 
-export function MobileSessionHeader({ controller }: { controller: MobileSessionController }) {
+export function MobileSessionHeader({
+  controller,
+  backInRail
+}: {
+  controller: MobileSessionController
+  backInRail: boolean
+}) {
   const {
     hostId,
     isFolderWorkspaceRoute,
@@ -43,11 +49,13 @@ export function MobileSessionHeader({ controller }: { controller: MobileSessionC
             onPress={revealSidebar}
           />
         ) : null}
-        <MobileSessionHeaderIconButton
-          accessibilityLabel="Back to worktrees"
-          icon={ChevronLeft}
-          onPress={requestLeaveSession}
-        />
+        {backInRail ? null : (
+          <MobileSessionHeaderIconButton
+            accessibilityLabel="Back to worktrees"
+            icon={ChevronLeft}
+            onPress={requestLeaveSession}
+          />
+        )}
 
         <View
           style={[styles.sessionTitleBlock, tabsInTopBar && styles.sessionTitleBlockBesideTabs]}

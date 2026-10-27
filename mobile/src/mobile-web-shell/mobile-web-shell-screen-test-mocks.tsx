@@ -98,9 +98,16 @@ export function screenModuleMocks(dependencies: ScreenDependencies) {
       Paths: { cache: 'file:///cache' }
     }),
     'lucide-react-native': () => ({ X: 'Icon' }),
-    'react-native-safe-area-context': () => ({
-      useSafeAreaInsets: () => ({ bottom: 8, left: 0, right: 0, top: 44 })
-    }),
+    'react-native-safe-area-context': async () => {
+      const { createContext } = await import('react')
+      return {
+        useSafeAreaInsets: () => ({ bottom: 8, left: 0, right: 0, top: 44 }),
+        useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
+        SafeAreaFrameContext: createContext(null),
+        SafeAreaInsetsContext: createContext(null),
+        SafeAreaProvider: ({ children }: { children: unknown }) => children
+      }
+    },
     'expo-router': () => ({
       router: { replace: vi.fn() },
       useRouter: () => ({

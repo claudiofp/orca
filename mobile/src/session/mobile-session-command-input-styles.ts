@@ -130,6 +130,34 @@ export const mobileSessionCommandInputStyles = StyleSheet.create({
     borderRadius: radii.button,
     minWidth: 36
   },
+  // The Duo side rail column: full-width keys with room for a thumb.
+  accessoryRail: {
+    flex: 1,
+    minHeight: 0
+  },
+  accessoryScrollVertical: {
+    flex: 1
+  },
+  accessoryContentVertical: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    gap: spacing.sm
+  },
+  accessoryKeyVertical: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.composerItem
+  },
+  keyboardDismissKeyVertical: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: spacing.sm,
+    marginBottom: spacing.sm,
+    minHeight: 44,
+    backgroundColor: colors.bgRaised,
+    borderRadius: radii.composerItem
+  },
   keyboardDismissGlyph: {
     alignItems: 'center',
     height: 18,
